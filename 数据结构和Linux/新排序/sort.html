@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量子隧穿排序可视化</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-shadow: 0 0 10px #58a6ff;
+            margin-bottom: 10px;
+        }
+
+        .container {
+            display: flex;
+            align-items: flex-end;
+            height: 300px;
+            gap: 4px;
+            padding: 20px;
+            background: #161b22;
+            border-radius: 10px;
+            border: 1px solid #30363d;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.1);
+        }
+
+        .bar {
+            width: 20px;
+            background: linear-gradient(to top, #1f6feb, #58a6ff);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.2s ease;
+            position: relative;
+        }
+
+        .bar.tunneling {
+            background: linear-gradient(to top, #ff7b72, #ff1232);
+            box-shadow: 0 0 15px #ff1232;
+            z-index: 10;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #2ea043;
+        }
+
+        button:disabled {
+            background-color: #30363d;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 15px;
+            color: #8b949e;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⚛️ 量子隧穿排序</h1>
+    
+    <div class="container" id="array-container">
+        <!-- Bars will be generated here -->
+    </div>
+
+    <div class="controls">
+        <button id="btn-start" onclick="startSort()">开始排序</button>
+        <button id="btn-reset" onclick="resetArray()">重置数组</button>
+    </div>
+
+    <div class="status" id="status-text">准备就绪</div>
+
+    <script>
+        // 配置参数
+        const ARRAY_SIZE = 30;
+        const MIN_VAL = 10;
+        const MAX_VAL = 100;
+        const TUNNEL_PROBABILITY = 0.3; // 隧穿概率 (0.0 到 1.0)
+
+        let array = [];
+        let container = document.getElementById('array-container');
+        let statusText = document.getElementById('status-text');
+        let btnStart = document.getElementById('btn-start');
+        let btnReset = document.getElementById('btn-reset');
+        let isSorting = false;
+
+        // 初始化数组
+        function initArray() {
+            array = [];
+            for (let i = 0; i < ARRAY_SIZE; i++) {
+                array.push(Math.floor(Math.random() * (MAX_VAL - MIN_VAL + 1)) + MIN_VAL);
+            }
+            drawArray();
+        }
+
+        // 绘制数组
+        function drawArray() {
+            container.innerHTML = '';
+            array.forEach((val, index) => {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                bar.style.height = `${val * 2.5}px`; // 缩放高度以适应容器
+                bar.id = `bar-${index}`;
+                container.appendChild(bar);
+            });
+        }
+
+        // 更新单个条形图
+        function updateBar(index, value, isTunneling = false) {
+            const bar = document.getElementById(`bar-${index}`);
+            if (bar) {
+                bar.style.height = `${value * 2.5}px`;
+                if (isTunneling) {
+                    bar.classList.add('tunneling');
+                } else {
+                    bar.classList.remove('tunneling');
+                }
+            }
+        }
+
+        // 延迟函数
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 重置按钮
+        function resetArray() {
+            if (isSorting) return;
+            initArray();
+            statusText.innerText = "准备就绪";
+        }
+
+        // 核心算法：量子隧穿排序
+        async function quantumTunnelSort() {
+            isSorting = true;
+            btnStart.disabled = true;
+            btnStart.innerText = "排序中...";
+            statusText.innerText = "正在扫描势垒...";
+
+            let n = array.length;
+
+            // 这是一个基于冒泡排序变体的“量子”版本
+            // 我们遍历数组，寻找逆序对
+            for (let i = 0; i < n - 1; i++) {
+                let swapped = false;
+
+                for (let j = 0; j < n - i - 1; j++) {
+                    if (array[j] > array[j + 1]) {
+                        
+                        // 经典交换逻辑（确定性隧穿）
+                        // 如果前面的比后面的大，它必须“隧穿”过去
+                        let temp = array[j];
+                        array[j] = array[j + 1];
+                        array[j + 1] = temp;
+
+                        // 视觉更新
+                        updateBar(j, array[j]);
+                        updateBar(j + 1, array[j+1], true); // 标记为隧穿状态
+                        
+                        swapped = true;
+                        statusText.innerText = `粒子 ${temp} 正在隧穿势垒...`;
+                        
+                        // 随机延迟模拟量子不确定性
+                        await sleep(Math.random() * 50 + 20);
+                        
+                        // 移除高亮
+                        updateBar(j + 1, array[j+1], false);
+                    }
+                }
+
+                // 优化：如果这一轮没有发生交换，说明已经有序
+                if (!swapped) break;
+            }
+
+            isSorting = false;
+            btnStart.disabled = false;
+            btnStart.innerText = "开始排序";
+            statusText.innerText = "排序完成！系统已稳定。";
+        }
+
+        // 启动排序
+        async function startSort() {
+            if (!isSorting) {
+                await quantumTunnelSort();
+            }
+        }
+
+        // 页面加载时初始化
+        initArray();
+
+    </script>
+</body>
+</html>
